@@ -26,7 +26,7 @@ enum TurnAngle {
     Angle180 = 180
 }
 
-//% color=#ff7f00 icon="\uf1b9"
+//% color=#3455db icon="\uf1b9"
 //% block="Robot Control"
 //% groups=["Sensor Calibration", "PID", "Robot"]
 namespace RobotControl {
@@ -36,6 +36,30 @@ namespace RobotControl {
     let pidKp = 1.2
     let pidKd = 0.8
     let pidKi = 0
+
+    /**
+     * Enter Maker Line calibration mode using the selected digital pin.
+     */
+    //% block="enter calibration pin %pin"
+    //% pin.defl=DigitalPin.P9
+    //% group="Sensor Calibration"
+    export function enterCalibration(pin: DigitalPin): void {
+        pins.digitalWritePin(pin, 0)
+        basic.pause(2100)
+        pins.digitalWritePin(pin, 1)
+    }
+
+    /**
+     * Exit Maker Line calibration mode using the selected digital pin.
+     */
+    //% block="exit calibration pin %pin"
+    //% pin.defl=DigitalPin.P9
+    //% group="Sensor Calibration"
+    export function exitCalibration(pin: DigitalPin): void {
+        pins.digitalWritePin(pin, 0)
+        basic.pause(100)
+        pins.digitalWritePin(pin, 1)
+    }
 
     /**
      * Calculate PID power difference from an ADC value.
@@ -85,7 +109,7 @@ namespace RobotControl {
      * Navigate the robot using MOTION:BIT motor channels M4 and M2.
      */
     //% block="robot navigate %direction speed %speed delay %delay"
-    //% speed.min=0 speed.max=255 speed.defl=150
+    //% speed.min=0 speed.max=255 speed.defl=170
     //% delay.min=0 delay.defl=0
     //% group="Robot"
     export function robotNavigate(direction: RobotDirection, speed: number, delay: number): void {
@@ -125,6 +149,7 @@ namespace RobotControl {
     //% pin.defl=AnalogReadWritePin.P0
     //% speed.min=0 speed.max=255 speed.defl=220
     //% cross.shadow="toggleOnOff"
+    //% cross.defl=true
     //% timer.min=0 timer.defl=0
     //% inlineInputMode=inline
     //% group="Robot"
@@ -183,7 +208,7 @@ namespace RobotControl {
      */
     //% block="robot calibration pin %pin speed %speed"
     //% pin.defl=DigitalPin.P9
-    //% speed.min=0 speed.max=255 speed.defl=150
+    //% speed.min=0 speed.max=255 speed.defl=170
     //% group="Robot"
     export function robotCalibration(pin: DigitalPin, speed: number): void {
         const motorSpeed = limit(speed, 0, 255)
@@ -206,7 +231,7 @@ namespace RobotControl {
      * Turn the robot until it finds the line again.
      */
     //% block="robot turn to line %direction speed %speed angle %angle pin %pin"
-    //% speed.min=0 speed.max=255 speed.defl=150
+    //% speed.min=0 speed.max=255 speed.defl=170
     //% angle.defl=TurnAngle.Angle90
     //% pin.defl=AnalogReadWritePin.P0
     //% inlineInputMode=inline
@@ -231,30 +256,6 @@ namespace RobotControl {
         while (pins.analogReadPin(pin) < 81) {
             basic.pause(5)
         }
-    }
-
-    /**
-     * Enter Maker Line calibration mode using the selected digital pin.
-     */
-    //% block="enter calibration pin %pin"
-    //% pin.defl=DigitalPin.P9
-    //% group="Sensor Calibration"
-    export function enterCalibration(pin: DigitalPin): void {
-        pins.digitalWritePin(pin, 0)
-        basic.pause(2100)
-        pins.digitalWritePin(pin, 1)
-    }
-
-    /**
-     * Exit Maker Line calibration mode using the selected digital pin.
-     */
-    //% block="exit calibration pin %pin"
-    //% pin.defl=DigitalPin.P9
-    //% group="Sensor Calibration"
-    export function exitCalibration(pin: DigitalPin): void {
-        pins.digitalWritePin(pin, 0)
-        basic.pause(100)
-        pins.digitalWritePin(pin, 1)
     }
 
     function runLineMotors(speedLeft: number, speedRight: number): void {
