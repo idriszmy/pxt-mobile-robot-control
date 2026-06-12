@@ -23,7 +23,7 @@ enum TurnAngle {
 
 //% color=#ff7f00 icon="\uf1b9"
 //% block="Robot Control"
-//% groups=["PID", "Calibration", "Robot"]
+//% groups=["Sensor Calibration", "PID", "Robot"]
 namespace RobotControl {
     let lastError = 0
     let integral = 0
@@ -228,7 +228,7 @@ namespace RobotControl {
      */
     //% block="enter calibration pin %pin"
     //% pin.defl=DigitalPin.P9
-    //% group="Calibration"
+    //% group="Sensor Calibration"
     export function enterCalibration(pin: DigitalPin): void {
         pins.digitalWritePin(pin, 0)
         basic.pause(2100)
@@ -240,7 +240,7 @@ namespace RobotControl {
      */
     //% block="exit calibration pin %pin"
     //% pin.defl=DigitalPin.P9
-    //% group="Calibration"
+    //% group="Sensor Calibration"
     export function exitCalibration(pin: DigitalPin): void {
         pins.digitalWritePin(pin, 0)
         basic.pause(100)
