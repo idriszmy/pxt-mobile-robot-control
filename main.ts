@@ -48,6 +48,7 @@ namespace RobotControl {
     let gripperLeftClosePosition = 101
     let gripperRightClosePosition = 74
     let gripperCurrentPosition = GripperPosition.Open
+    let gripperPositionKnown = false
     const gripperRange = 70
 
     /**
@@ -298,7 +299,7 @@ namespace RobotControl {
         gripperRightChannel = rightArm
         gripperLeftClosePosition = limit(leftPosition, 0, 180)
         gripperRightClosePosition = limit(rightPosition, 0, 180)
-        gripperCurrentPosition = GripperPosition.Close
+        gripperPositionKnown = false
     }
 
     /**
@@ -308,27 +309,28 @@ namespace RobotControl {
     //% group="Gripper"
     //% weight=90
     export function gripper(position: GripperPosition): void {
-        if (position == gripperCurrentPosition) {
+        if (gripperPositionKnown && position == gripperCurrentPosition) {
             return
         }
 
         if (position == GripperPosition.Close) {
             moveGripper(
-                gripperLeftClosePosition - gripperRange,
+                gripperLeftClosePosition + gripperRange,
                 gripperLeftClosePosition,
-                gripperRightClosePosition + gripperRange,
+                gripperRightClosePosition - gripperRange,
                 gripperRightClosePosition
             )
         } else {
             moveGripper(
                 gripperLeftClosePosition,
-                gripperLeftClosePosition - gripperRange,
+                gripperLeftClosePosition + gripperRange,
                 gripperRightClosePosition,
-                gripperRightClosePosition + gripperRange
+                gripperRightClosePosition - gripperRange
             )
         }
 
         gripperCurrentPosition = position
+        gripperPositionKnown = true
     }
 
     function runLineMotors(speedLeft: number, speedRight: number): void {
