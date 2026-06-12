@@ -1,7 +1,20 @@
 /**
  * Robot Control
  */
-//% color=#0fbc11 icon="\uf1b9"
+enum RobotDirection {
+    //% block="stop"
+    Stop,
+    //% block="forward"
+    Forward,
+    //% block="reverse"
+    Reverse,
+    //% block="left"
+    Left,
+    //% block="right"
+    Right
+}
+
+//% color=#ff7f00 icon="\uf1b9"
 //% block="Robot Control"
 namespace RobotControl {
     let lastError = 0
@@ -17,6 +30,7 @@ namespace RobotControl {
     //% kp.defl=0.55
     //% kd.defl=0.25
     //% ki.defl=0
+    //% inlineInputMode=inline
     export function pid_power_diff(adc: number, setpoint: number, kp: number, kd: number, ki: number): number {
         const error = adc - setpoint
         const derivative = error - lastError
@@ -34,6 +48,35 @@ namespace RobotControl {
     export function reset_pid(): void {
         lastError = 0
         integral = 0
+    }
+
+    /**
+     * Navigate the robot using MOTION:BIT motor channels M4 and M2.
+     */
+    //% block="navigate %direction speed %speed delay %delay"
+    //% speed.min=0 speed.max=255 speed.defl=150
+    //% delay.min=0 delay.defl=0
+    export function navigate(direction: RobotDirection, speed: number, delay: number): void {
+        const motorSpeed = limit(speed, 0, 255)
+
+        if (direction == RobotDirection.Stop) {
+            motionbit.brakeMotor(MotionBitMotorChannel.M4)
+            motionbit.brakeMotor(MotionBitMotorChannel.M2)
+        } else if (direction == RobotDirection.Forward) {
+            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, motorSpeed)
+            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
+        } else if (direction == RobotDirection.Reverse) {
+            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Backward, motorSpeed)
+            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Backward, motorSpeed)
+        } else if (direction == RobotDirection.Right) {
+            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, motorSpeed)
+            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Backward, motorSpeed)
+        } else if (direction == RobotDirection.Left) {
+            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Backward, motorSpeed)
+            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
+        }
+
+        basic.pause(Math.max(0, delay))
     }
 
     /**
@@ -56,5 +99,15 @@ namespace RobotControl {
         pins.digitalWritePin(pin, 0)
         basic.pause(100)
         pins.digitalWritePin(pin, 1)
+    }
+
+    function limit(value: number, min: number, max: number): number {
+        if (value < min) {
+            return min
+        }
+        if (value > max) {
+            return max
+        }
+        return value
     }
 }
