@@ -285,7 +285,7 @@ namespace RobotControl {
     /**
      * Save the gripper close positions.
      */
-    //% block="calibrate gripper close left arm %leftArm left position %leftPosition right arm %rightArm right position %rightPosition"
+    //% block="close gripper position left arm %leftArm pos %leftPosition right arm %rightArm pos %rightPosition"
     //% leftArm.defl=MotionBitServoChannel.S8
     //% leftPosition.min=0 leftPosition.max=180 leftPosition.defl=101
     //% rightArm.defl=MotionBitServoChannel.S4
