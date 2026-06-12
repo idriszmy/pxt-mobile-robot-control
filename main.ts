@@ -30,7 +30,9 @@ enum GripperPosition {
     //% block="close"
     Close,
     //% block="open"
-    Open
+    Open,
+    //% block="toggle"
+    Toggle
 }
 
 //% color=#3455db icon="\uf1b9"
@@ -309,6 +311,14 @@ namespace RobotControl {
     //% group="Gripper"
     //% weight=90
     export function gripper(position: GripperPosition): void {
+        if (position == GripperPosition.Toggle) {
+            if (!gripperPositionKnown || gripperCurrentPosition == GripperPosition.Open) {
+                position = GripperPosition.Close
+            } else {
+                position = GripperPosition.Open
+            }
+        }
+
         if (gripperPositionKnown && position == gripperCurrentPosition) {
             return
         }
