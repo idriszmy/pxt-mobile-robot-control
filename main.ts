@@ -43,10 +43,10 @@ namespace RobotControl {
     let pidKp = 0.6
     let pidKd = 0.5
     let pidKi = 0
-    let gripperLeftChannel = MotionBitServoChannel.S4
-    let gripperRightChannel = MotionBitServoChannel.S8
-    let gripperLeftClosePosition = 74
-    let gripperRightClosePosition = 101
+    let gripperLeftChannel = MotionBitServoChannel.S8
+    let gripperRightChannel = MotionBitServoChannel.S4
+    let gripperLeftClosePosition = 101
+    let gripperRightClosePosition = 74
     let gripperCurrentPosition = GripperPosition.Open
     const gripperRange = 70
 
@@ -286,10 +286,10 @@ namespace RobotControl {
      * Save the gripper close positions.
      */
     //% block="calibrate gripper close left arm %leftArm left position %leftPosition right arm %rightArm right position %rightPosition"
-    //% leftArm.defl=MotionBitServoChannel.S4
-    //% leftPosition.min=0 leftPosition.max=180 leftPosition.defl=74
-    //% rightArm.defl=MotionBitServoChannel.S8
-    //% rightPosition.min=0 rightPosition.max=180 rightPosition.defl=101
+    //% leftArm.defl=MotionBitServoChannel.S8
+    //% leftPosition.min=0 leftPosition.max=180 leftPosition.defl=101
+    //% rightArm.defl=MotionBitServoChannel.S4
+    //% rightPosition.min=0 rightPosition.max=180 rightPosition.defl=74
     //% inlineInputMode=inline
     //% group="Gripper"
     //% weight=100
