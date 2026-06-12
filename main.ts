@@ -132,6 +132,8 @@ namespace RobotControl {
         const baseSpeed = limit(speed, 0, 255)
         let speedLeft = baseSpeed
         let speedRight = baseSpeed
+        let crossFound = false
+        let endTime = 0
 
         resetPid()
 
@@ -142,8 +144,13 @@ namespace RobotControl {
                 if (timer <= 0) {
                     break
                 }
-                runLineMotors(baseSpeed, baseSpeed)
-                basic.pause(timer)
+                if (!crossFound) {
+                    crossFound = true
+                    endTime = input.runningTime() + timer
+                }
+            }
+
+            if (crossFound && input.runningTime() >= endTime) {
                 break
             }
 
