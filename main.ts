@@ -130,6 +130,7 @@ namespace RobotControl {
         }
 
         basic.pause(Math.max(0, delay))
+        robotStop()
     }
 
     /**
@@ -201,6 +202,8 @@ namespace RobotControl {
 
             basic.pause(5)
         }
+
+        robotStop()
     }
 
     /**
@@ -247,20 +250,28 @@ namespace RobotControl {
             motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Backward, motorSpeed)
         }
 
-        if (angle == TurnAngle.Angle90) {
-            basic.pause(300)
-        } else if (angle == TurnAngle.Angle180) {
-            basic.pause(600)
+        while (pins.analogReadPin(pin) >= 81) {
+            basic.pause(5)
         }
+
+        basic.pause(turnDelay(angle, motorSpeed))
 
         while (pins.analogReadPin(pin) < 81) {
             basic.pause(5)
         }
+
+        robotStop()
     }
 
     function runLineMotors(speedLeft: number, speedRight: number): void {
         motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, limit(speedLeft, 0, 255))
         motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, limit(speedRight, 0, 255))
+    }
+
+    function turnDelay(angle: TurnAngle, speed: number): number {
+        const baseDelay = angle == TurnAngle.Angle180 ? 400 : 200
+        const effectiveSpeed = Math.max(1, speed)
+        return Math.round(baseDelay * 170 / effectiveSpeed)
     }
 
     function limit(value: number, min: number, max: number): number {
