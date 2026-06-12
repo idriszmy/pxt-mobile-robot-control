@@ -42,8 +42,8 @@ namespace RobotControl {
     let lastError = 0
     let integral = 0
     let pidSetpoint = 500
-    let pidKp = 0.6
-    let pidKd = 0.5
+    let pidKp = 0.8
+    let pidKd = 0.7
     let pidKi = 0
     let gripperLeftChannel = MotionBitServoChannel.S8
     let gripperRightChannel = MotionBitServoChannel.S4
@@ -101,8 +101,8 @@ namespace RobotControl {
      */
     //% block="set PID tuning setpoint %setpoint kp %kp kd %kd ki %ki"
     //% setpoint.min=0 setpoint.max=1023 setpoint.defl=500
-    //% kp.defl=0.6
-    //% kd.defl=0.5
+    //% kp.defl=0.8
+    //% kd.defl=0.7
     //% ki.defl=0
     //% inlineInputMode=inline
     //% group="PID"
