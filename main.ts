@@ -26,9 +26,16 @@ enum TurnAngle {
     Angle180 = 180
 }
 
+enum GripperPosition {
+    //% block="close"
+    Close,
+    //% block="open"
+    Open
+}
+
 //% color=#3455db icon="\uf1b9"
 //% block="Robot Control"
-//% groups=["Sensor Calibration", "PID", "Robot"]
+//% groups=["Sensor Calibration", "PID", "Robot", "Gripper"]
 namespace RobotControl {
     let lastError = 0
     let integral = 0
@@ -36,6 +43,11 @@ namespace RobotControl {
     let pidKp = 0.6
     let pidKd = 0.5
     let pidKi = 0
+    let gripperLeftChannel = MotionBitServoChannel.S4
+    let gripperRightChannel = MotionBitServoChannel.S8
+    let gripperLeftClosePosition = 74
+    let gripperRightClosePosition = 101
+    const gripperRange = 70
 
     /**
      * Enter Maker Line calibration mode using the selected digital pin.
@@ -262,9 +274,64 @@ namespace RobotControl {
         robotStop()
     }
 
+    /**
+     * Save the gripper close positions.
+     */
+    //% block="calibrate gripper close left arm %leftArm left position %leftPosition right arm %rightArm right position %rightPosition"
+    //% leftArm.defl=MotionBitServoChannel.S4
+    //% leftPosition.min=0 leftPosition.max=180 leftPosition.defl=74
+    //% rightArm.defl=MotionBitServoChannel.S8
+    //% rightPosition.min=0 rightPosition.max=180 rightPosition.defl=101
+    //% inlineInputMode=inline
+    //% group="Gripper"
+    //% weight=100
+    export function calibrateGripperClose(leftArm: MotionBitServoChannel, leftPosition: number, rightArm: MotionBitServoChannel, rightPosition: number): void {
+        gripperLeftChannel = leftArm
+        gripperRightChannel = rightArm
+        gripperLeftClosePosition = limit(leftPosition, 0, 180)
+        gripperRightClosePosition = limit(rightPosition, 0, 180)
+    }
+
+    /**
+     * Move the gripper to open or close.
+     */
+    //% block="gripper %position"
+    //% group="Gripper"
+    //% weight=90
+    export function gripper(position: GripperPosition): void {
+        if (position == GripperPosition.Close) {
+            moveGripper(
+                gripperLeftClosePosition - gripperRange,
+                gripperLeftClosePosition,
+                gripperRightClosePosition + gripperRange,
+                gripperRightClosePosition
+            )
+        } else {
+            moveGripper(
+                gripperLeftClosePosition,
+                gripperLeftClosePosition - gripperRange,
+                gripperRightClosePosition,
+                gripperRightClosePosition + gripperRange
+            )
+        }
+    }
+
     function runLineMotors(speedLeft: number, speedRight: number): void {
         motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, limit(speedLeft, 0, 255))
         motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, limit(speedRight, 0, 255))
+    }
+
+    function moveGripper(leftFrom: number, leftTo: number, rightFrom: number, rightTo: number): void {
+        for (let step = 0; step <= gripperRange; step++) {
+            const leftPosition = leftFrom + (leftTo - leftFrom) * step / gripperRange
+            const rightPosition = rightFrom + (rightTo - rightFrom) * step / gripperRange
+
+            motionbit.setServoPosition(gripperLeftChannel, limit(leftPosition, 0, 180))
+            motionbit.setServoPosition(gripperRightChannel, limit(rightPosition, 0, 180))
+            basic.pause(5)
+        }
+
+        basic.pause(200)
     }
 
     function turnDelay(angle: TurnAngle, speed: number): number {
