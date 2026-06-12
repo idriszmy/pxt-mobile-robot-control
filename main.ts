@@ -2,12 +2,17 @@
  * Robot Control
  */
 enum RobotDirection {
-    //% block="stop"
-    Stop,
     //% block="forward"
     Forward,
     //% block="reverse"
     Reverse,
+    //% block="left"
+    Left,
+    //% block="right"
+    Right
+}
+
+enum TurnDirection {
     //% block="left"
     Left,
     //% block="right"
@@ -28,8 +33,8 @@ namespace RobotControl {
     let lastError = 0
     let integral = 0
     let pidSetpoint = 512
-    let pidKp = 0.55
-    let pidKd = 0.25
+    let pidKp = 1.2
+    let pidKd = 0.8
     let pidKi = 0
 
     /**
@@ -53,8 +58,8 @@ namespace RobotControl {
      */
     //% block="set PID tuning setpoint %setpoint kp %kp kd %kd ki %ki"
     //% setpoint.min=0 setpoint.max=1023 setpoint.defl=512
-    //% kp.defl=0.55
-    //% kd.defl=0.25
+    //% kp.defl=1.2
+    //% kd.defl=0.8
     //% ki.defl=0
     //% inlineInputMode=inline
     //% group="PID"
@@ -86,10 +91,7 @@ namespace RobotControl {
     export function robotNavigate(direction: RobotDirection, speed: number, delay: number): void {
         const motorSpeed = limit(speed, 0, 255)
 
-        if (direction == RobotDirection.Stop) {
-            motionbit.brakeMotor(MotionBitMotorChannel.M4)
-            motionbit.brakeMotor(MotionBitMotorChannel.M2)
-        } else if (direction == RobotDirection.Forward) {
+        if (direction == RobotDirection.Forward) {
             motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, motorSpeed)
             motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
         } else if (direction == RobotDirection.Reverse) {
@@ -107,11 +109,21 @@ namespace RobotControl {
     }
 
     /**
+     * Stop the robot using MOTION:BIT motor channels M4 and M2.
+     */
+    //% block="robot stop"
+    //% group="Robot"
+    export function robotStop(): void {
+        motionbit.brakeMotor(MotionBitMotorChannel.M4)
+        motionbit.brakeMotor(MotionBitMotorChannel.M2)
+    }
+
+    /**
      * Follow a line using Maker Line ADC input and MOTION:BIT motors.
      */
     //% block="robot line follow pin %pin speed %speed cross %cross timer %timer"
     //% pin.defl=AnalogReadWritePin.P0
-    //% speed.min=0 speed.max=255 speed.defl=150
+    //% speed.min=0 speed.max=255 speed.defl=220
     //% cross.shadow="toggleOnOff"
     //% timer.min=0 timer.defl=0
     //% inlineInputMode=inline
@@ -120,8 +132,6 @@ namespace RobotControl {
         const baseSpeed = limit(speed, 0, 255)
         let speedLeft = baseSpeed
         let speedRight = baseSpeed
-        let crossFound = false
-        let endTime = 0
 
         resetPid()
 
@@ -132,13 +142,8 @@ namespace RobotControl {
                 if (timer <= 0) {
                     break
                 }
-                if (!crossFound) {
-                    crossFound = true
-                    endTime = input.runningTime() + timer
-                }
-            }
-
-            if (crossFound && input.runningTime() >= endTime) {
+                runLineMotors(baseSpeed, baseSpeed)
+                basic.pause(timer)
                 break
             }
 
@@ -199,17 +204,15 @@ namespace RobotControl {
     //% pin.defl=AnalogReadWritePin.P0
     //% inlineInputMode=inline
     //% group="Robot"
-    export function robotTurnToLine(direction: RobotDirection, speed: number, angle: TurnAngle, pin: AnalogReadWritePin): void {
+    export function robotTurnToLine(direction: TurnDirection, speed: number, angle: TurnAngle, pin: AnalogReadWritePin): void {
         const motorSpeed = limit(speed, 0, 255)
 
-        if (direction == RobotDirection.Left) {
+        if (direction == TurnDirection.Left) {
             motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Backward, motorSpeed)
             motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
-        } else if (direction == RobotDirection.Right) {
+        } else if (direction == TurnDirection.Right) {
             motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, motorSpeed)
             motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Backward, motorSpeed)
-        } else {
-            return
         }
 
         if (angle == TurnAngle.Angle90) {
