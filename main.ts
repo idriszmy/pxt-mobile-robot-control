@@ -23,6 +23,7 @@ enum TurnAngle {
 
 //% color=#ff7f00 icon="\uf1b9"
 //% block="Robot Control"
+//% groups=["PID", "Calibration", "Robot"]
 namespace RobotControl {
     let lastError = 0
     let integral = 0
@@ -36,6 +37,7 @@ namespace RobotControl {
      */
     //% block="PID power diff adc %adc"
     //% adc.min=0 adc.max=1023
+    //% group="PID"
     export function pidPowerDiff(adc: number): number {
         const error = adc - pidSetpoint
         const derivative = error - lastError
@@ -55,6 +57,7 @@ namespace RobotControl {
     //% kd.defl=0.25
     //% ki.defl=0
     //% inlineInputMode=inline
+    //% group="PID"
     export function setPidPowerDiff(setpoint: number, kp: number, kd: number, ki: number): void {
         pidSetpoint = limit(setpoint, 0, 1023)
         pidKp = kp
@@ -67,6 +70,7 @@ namespace RobotControl {
      * Reset the saved PID values.
      */
     //% block="reset PID"
+    //% group="PID"
     export function resetPid(): void {
         lastError = 0
         integral = 0
@@ -78,7 +82,7 @@ namespace RobotControl {
     //% block="robot navigate %direction speed %speed delay %delay"
     //% speed.min=0 speed.max=255 speed.defl=150
     //% delay.min=0 delay.defl=0
-    //% advanced=true
+    //% group="Robot"
     export function robotNavigate(direction: RobotDirection, speed: number, delay: number): void {
         const motorSpeed = limit(speed, 0, 255)
 
@@ -110,7 +114,8 @@ namespace RobotControl {
     //% speed.min=0 speed.max=255 speed.defl=150
     //% cross.shadow="toggleOnOff"
     //% timer.min=0 timer.defl=0
-    //% advanced=true
+    //% inlineInputMode=inline
+    //% group="Robot"
     export function robotLineFollow(pin: AnalogReadWritePin, speed: number, cross: boolean, timer: number): void {
         const baseSpeed = limit(speed, 0, 255)
         let speedLeft = baseSpeed
@@ -167,7 +172,7 @@ namespace RobotControl {
     //% block="robot calibration pin %pin speed %speed"
     //% pin.defl=DigitalPin.P9
     //% speed.min=0 speed.max=255 speed.defl=150
-    //% advanced=true
+    //% group="Robot"
     export function robotCalibration(pin: DigitalPin, speed: number): void {
         const motorSpeed = limit(speed, 0, 255)
 
@@ -192,7 +197,8 @@ namespace RobotControl {
     //% speed.min=0 speed.max=255 speed.defl=150
     //% angle.defl=TurnAngle.Angle90
     //% pin.defl=AnalogReadWritePin.P0
-    //% advanced=true
+    //% inlineInputMode=inline
+    //% group="Robot"
     export function robotTurnToLine(direction: RobotDirection, speed: number, angle: TurnAngle, pin: AnalogReadWritePin): void {
         const motorSpeed = limit(speed, 0, 255)
 
@@ -222,6 +228,7 @@ namespace RobotControl {
      */
     //% block="enter calibration pin %pin"
     //% pin.defl=DigitalPin.P9
+    //% group="Calibration"
     export function enterCalibration(pin: DigitalPin): void {
         pins.digitalWritePin(pin, 0)
         basic.pause(2100)
@@ -233,6 +240,7 @@ namespace RobotControl {
      */
     //% block="exit calibration pin %pin"
     //% pin.defl=DigitalPin.P9
+    //% group="Calibration"
     export function exitCalibration(pin: DigitalPin): void {
         pins.digitalWritePin(pin, 0)
         basic.pause(100)
