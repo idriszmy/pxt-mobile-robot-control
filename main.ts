@@ -78,6 +78,7 @@ namespace RobotControl {
     //% block="robot navigate %direction speed %speed delay %delay"
     //% speed.min=0 speed.max=255 speed.defl=150
     //% delay.min=0 delay.defl=0
+    //% advanced=true
     export function robotNavigate(direction: RobotDirection, speed: number, delay: number): void {
         const motorSpeed = limit(speed, 0, 255)
 
@@ -109,6 +110,7 @@ namespace RobotControl {
     //% speed.min=0 speed.max=255 speed.defl=150
     //% cross.shadow="toggleOnOff"
     //% timer.min=0 timer.defl=0
+    //% advanced=true
     export function robotLineFollow(pin: AnalogReadWritePin, speed: number, cross: boolean, timer: number): void {
         const baseSpeed = limit(speed, 0, 255)
         let speedLeft = baseSpeed
@@ -165,6 +167,7 @@ namespace RobotControl {
     //% block="robot calibration pin %pin speed %speed"
     //% pin.defl=DigitalPin.P9
     //% speed.min=0 speed.max=255 speed.defl=150
+    //% advanced=true
     export function robotCalibration(pin: DigitalPin, speed: number): void {
         const motorSpeed = limit(speed, 0, 255)
 
@@ -189,6 +192,7 @@ namespace RobotControl {
     //% speed.min=0 speed.max=255 speed.defl=150
     //% angle.defl=TurnAngle.Angle90
     //% pin.defl=AnalogReadWritePin.P0
+    //% advanced=true
     export function robotTurnToLine(direction: RobotDirection, speed: number, angle: TurnAngle, pin: AnalogReadWritePin): void {
         const motorSpeed = limit(speed, 0, 255)
 
