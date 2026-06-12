@@ -14,38 +14,60 @@ enum RobotDirection {
     Right
 }
 
+enum TurnAngle {
+    //% block="90"
+    Angle90 = 90,
+    //% block="180"
+    Angle180 = 180
+}
+
 //% color=#ff7f00 icon="\uf1b9"
 //% block="Robot Control"
 namespace RobotControl {
     let lastError = 0
     let integral = 0
+    let pidSetpoint = 512
+    let pidKp = 0.55
+    let pidKd = 0.25
+    let pidKi = 0
 
     /**
      * Calculate PID power difference from an ADC value.
      */
-    //% block="PID power diff adc %adc setpoint %setpoint kp %kp kd %kd ki %ki"
+    //% block="PID power diff adc %adc"
     //% adc.min=0 adc.max=1023
-    //% setpoint.min=0 setpoint.max=1023
-    //% setpoint.defl=512
-    //% kp.defl=0.55
-    //% kd.defl=0.25
-    //% ki.defl=0
-    //% inlineInputMode=inline
-    export function pid_power_diff(adc: number, setpoint: number, kp: number, kd: number, ki: number): number {
-        const error = adc - setpoint
+    export function pidPowerDiff(adc: number): number {
+        const error = adc - pidSetpoint
         const derivative = error - lastError
 
         integral += error
         lastError = error
 
-        return error * kp + derivative * kd + integral * ki
+        return error * pidKp + derivative * pidKd + integral * pidKi
+    }
+
+    /**
+     * Set the PID tuning values.
+     */
+    //% block="set PID tuning setpoint %setpoint kp %kp kd %kd ki %ki"
+    //% setpoint.min=0 setpoint.max=1023 setpoint.defl=512
+    //% kp.defl=0.55
+    //% kd.defl=0.25
+    //% ki.defl=0
+    //% inlineInputMode=inline
+    export function setPidPowerDiff(setpoint: number, kp: number, kd: number, ki: number): void {
+        pidSetpoint = limit(setpoint, 0, 1023)
+        pidKp = kp
+        pidKd = kd
+        pidKi = ki
+        resetPid()
     }
 
     /**
      * Reset the saved PID values.
      */
     //% block="reset PID"
-    export function reset_pid(): void {
+    export function resetPid(): void {
         lastError = 0
         integral = 0
     }
@@ -53,10 +75,10 @@ namespace RobotControl {
     /**
      * Navigate the robot using MOTION:BIT motor channels M4 and M2.
      */
-    //% block="navigate %direction speed %speed delay %delay"
+    //% block="robot navigate %direction speed %speed delay %delay"
     //% speed.min=0 speed.max=255 speed.defl=150
     //% delay.min=0 delay.defl=0
-    export function navigate(direction: RobotDirection, speed: number, delay: number): void {
+    export function robotNavigate(direction: RobotDirection, speed: number, delay: number): void {
         const motorSpeed = limit(speed, 0, 255)
 
         if (direction == RobotDirection.Stop) {
@@ -80,11 +102,123 @@ namespace RobotControl {
     }
 
     /**
+     * Follow a line using Maker Line ADC input and MOTION:BIT motors.
+     */
+    //% block="robot line follow pin %pin speed %speed cross %cross timer %timer"
+    //% pin.defl=AnalogReadWritePin.P0
+    //% speed.min=0 speed.max=255 speed.defl=150
+    //% cross.shadow="toggleOnOff"
+    //% timer.min=0 timer.defl=0
+    export function robotLineFollow(pin: AnalogReadWritePin, speed: number, cross: boolean, timer: number): void {
+        const baseSpeed = limit(speed, 0, 255)
+        let speedLeft = baseSpeed
+        let speedRight = baseSpeed
+        let crossFound = false
+        let endTime = 0
+
+        resetPid()
+
+        while (true) {
+            const adc = pins.analogReadPin(pin)
+
+            if (adc > 941 && cross) {
+                if (timer <= 0) {
+                    break
+                }
+                if (!crossFound) {
+                    crossFound = true
+                    endTime = input.runningTime() + timer
+                }
+            }
+
+            if (crossFound && input.runningTime() >= endTime) {
+                break
+            }
+
+            if (adc < 81) {
+                runLineMotors(speedLeft, speedRight)
+            } else if (adc > 941) {
+                speedLeft = baseSpeed
+                speedRight = baseSpeed
+                runLineMotors(speedLeft, speedRight)
+            } else {
+                const powerDiff = limit(pidPowerDiff(adc), -baseSpeed, baseSpeed)
+
+                if (powerDiff < 0) {
+                    speedLeft = baseSpeed + powerDiff
+                    speedRight = baseSpeed
+                } else {
+                    speedLeft = baseSpeed
+                    speedRight = baseSpeed - powerDiff
+                }
+
+                runLineMotors(speedLeft, speedRight)
+            }
+
+            basic.pause(5)
+        }
+    }
+
+    /**
+     * Calibrate Maker Line by rotating the robot using MOTION:BIT motors.
+     */
+    //% block="robot calibration pin %pin speed %speed"
+    //% pin.defl=DigitalPin.P9
+    //% speed.min=0 speed.max=255 speed.defl=150
+    export function robotCalibration(pin: DigitalPin, speed: number): void {
+        const motorSpeed = limit(speed, 0, 255)
+
+        enterCalibration(pin)
+        motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Backward, motorSpeed)
+        motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
+        basic.pause(1000)
+        motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, motorSpeed)
+        motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Backward, motorSpeed)
+        basic.pause(2000)
+        motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Backward, motorSpeed)
+        motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
+        basic.pause(1000)
+        motionbit.brakeMotor(MotionBitMotorChannel.All)
+        exitCalibration(pin)
+    }
+
+    /**
+     * Turn the robot until it finds the line again.
+     */
+    //% block="robot turn to line %direction speed %speed angle %angle pin %pin"
+    //% speed.min=0 speed.max=255 speed.defl=150
+    //% angle.defl=TurnAngle.Angle90
+    //% pin.defl=AnalogReadWritePin.P0
+    export function robotTurnToLine(direction: RobotDirection, speed: number, angle: TurnAngle, pin: AnalogReadWritePin): void {
+        const motorSpeed = limit(speed, 0, 255)
+
+        if (direction == RobotDirection.Left) {
+            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Backward, motorSpeed)
+            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
+        } else if (direction == RobotDirection.Right) {
+            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, motorSpeed)
+            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Backward, motorSpeed)
+        } else {
+            return
+        }
+
+        if (angle == TurnAngle.Angle90) {
+            basic.pause(300)
+        } else if (angle == TurnAngle.Angle180) {
+            basic.pause(600)
+        }
+
+        while (pins.analogReadPin(pin) < 81) {
+            basic.pause(5)
+        }
+    }
+
+    /**
      * Enter Maker Line calibration mode using the selected digital pin.
      */
     //% block="enter calibration pin %pin"
     //% pin.defl=DigitalPin.P9
-    export function enter_calibration(pin: DigitalPin): void {
+    export function enterCalibration(pin: DigitalPin): void {
         pins.digitalWritePin(pin, 0)
         basic.pause(2100)
         pins.digitalWritePin(pin, 1)
@@ -95,10 +229,15 @@ namespace RobotControl {
      */
     //% block="exit calibration pin %pin"
     //% pin.defl=DigitalPin.P9
-    export function exit_calibration(pin: DigitalPin): void {
+    export function exitCalibration(pin: DigitalPin): void {
         pins.digitalWritePin(pin, 0)
         basic.pause(100)
         pins.digitalWritePin(pin, 1)
+    }
+
+    function runLineMotors(speedLeft: number, speedRight: number): void {
+        motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, limit(speedLeft, 0, 255))
+        motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, limit(speedRight, 0, 255))
     }
 
     function limit(value: number, min: number, max: number): number {
