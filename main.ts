@@ -43,6 +43,7 @@ namespace RobotControl {
     //% block="enter calibration pin %pin"
     //% pin.defl=DigitalPin.P9
     //% group="Sensor Calibration"
+    //% weight=100
     export function enterCalibration(pin: DigitalPin): void {
         pins.digitalWritePin(pin, 0)
         basic.pause(2100)
@@ -55,6 +56,7 @@ namespace RobotControl {
     //% block="exit calibration pin %pin"
     //% pin.defl=DigitalPin.P9
     //% group="Sensor Calibration"
+    //% weight=90
     export function exitCalibration(pin: DigitalPin): void {
         pins.digitalWritePin(pin, 0)
         basic.pause(100)
@@ -67,6 +69,7 @@ namespace RobotControl {
     //% block="PID power diff adc %adc"
     //% adc.min=0 adc.max=1023
     //% group="PID"
+    //% weight=80
     export function pidPowerDiff(adc: number): number {
         const error = adc - pidSetpoint
         const derivative = error - lastError
@@ -87,6 +90,7 @@ namespace RobotControl {
     //% ki.defl=0
     //% inlineInputMode=inline
     //% group="PID"
+    //% weight=100
     export function setPidPowerDiff(setpoint: number, kp: number, kd: number, ki: number): void {
         pidSetpoint = limit(setpoint, 0, 1023)
         pidKp = kp
@@ -96,22 +100,13 @@ namespace RobotControl {
     }
 
     /**
-     * Reset the saved PID values.
-     */
-    //% block="reset PID"
-    //% group="PID"
-    export function resetPid(): void {
-        lastError = 0
-        integral = 0
-    }
-
-    /**
      * Navigate the robot using MOTION:BIT motor channels M4 and M2.
      */
     //% block="robot navigate %direction speed %speed delay %delay"
     //% speed.min=0 speed.max=255 speed.defl=170
     //% delay.min=0 delay.defl=0
     //% group="Robot"
+    //% weight=90
     export function robotNavigate(direction: RobotDirection, speed: number, delay: number): void {
         const motorSpeed = limit(speed, 0, 255)
 
@@ -138,6 +133,7 @@ namespace RobotControl {
      */
     //% block="robot stop"
     //% group="Robot"
+    //% weight=60
     export function robotStop(): void {
         motionbit.brakeMotor(MotionBitMotorChannel.M4)
         motionbit.brakeMotor(MotionBitMotorChannel.M2)
@@ -146,15 +142,16 @@ namespace RobotControl {
     /**
      * Follow a line using Maker Line ADC input and MOTION:BIT motors.
      */
-    //% block="robot line follow pin %pin speed %speed cross %cross timer %timer"
+    //% block="robot line follow pin %pin speed %speed cross %cross stop timer %stopTimer"
     //% pin.defl=AnalogReadWritePin.P0
     //% speed.min=0 speed.max=255 speed.defl=220
     //% cross.shadow="toggleOnOff"
     //% cross.defl=true
-    //% timer.min=0 timer.defl=0
+    //% stopTimer.min=0 stopTimer.defl=0
     //% inlineInputMode=inline
     //% group="Robot"
-    export function robotLineFollow(pin: AnalogReadWritePin, speed: number, cross: boolean, timer: number): void {
+    //% weight=80
+    export function robotLineFollow(pin: AnalogReadWritePin, speed: number, cross: boolean, stopTimer: number): void {
         const baseSpeed = limit(speed, 0, 255)
         let speedLeft = baseSpeed
         let speedRight = baseSpeed
@@ -167,12 +164,12 @@ namespace RobotControl {
             const adc = pins.analogReadPin(pin)
 
             if (adc > 941 && cross) {
-                if (timer <= 0) {
+                if (stopTimer <= 0) {
                     break
                 }
                 if (!crossFound) {
                     crossFound = true
-                    endTime = input.runningTime() + timer
+                    endTime = input.runningTime() + stopTimer
                 }
             }
 
@@ -213,6 +210,7 @@ namespace RobotControl {
     //% pin.defl=DigitalPin.P9
     //% speed.min=0 speed.max=255 speed.defl=170
     //% group="Robot"
+    //% weight=100
     export function robotCalibration(pin: DigitalPin, speed: number): void {
         const motorSpeed = limit(speed, 0, 255)
 
@@ -239,6 +237,7 @@ namespace RobotControl {
     //% pin.defl=AnalogReadWritePin.P0
     //% inlineInputMode=inline
     //% group="Robot"
+    //% weight=70
     export function robotTurnToLine(direction: TurnDirection, speed: number, angle: TurnAngle, pin: AnalogReadWritePin): void {
         const motorSpeed = limit(speed, 0, 255)
 
@@ -272,6 +271,11 @@ namespace RobotControl {
         const baseDelay = angle == TurnAngle.Angle180 ? 400 : 200
         const effectiveSpeed = Math.max(1, speed)
         return Math.round(baseDelay * 170 / effectiveSpeed)
+    }
+
+    function resetPid(): void {
+        lastError = 0
+        integral = 0
     }
 
     function limit(value: number, min: number, max: number): number {
