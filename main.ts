@@ -32,9 +32,9 @@ enum TurnAngle {
 namespace RobotControl {
     let lastError = 0
     let integral = 0
-    let pidSetpoint = 512
-    let pidKp = 1.2
-    let pidKd = 0.8
+    let pidSetpoint = 500
+    let pidKp = 0.6
+    let pidKd = 0.5
     let pidKi = 0
 
     /**
@@ -84,9 +84,9 @@ namespace RobotControl {
      * Set the PID tuning values.
      */
     //% block="set PID tuning setpoint %setpoint kp %kp kd %kd ki %ki"
-    //% setpoint.min=0 setpoint.max=1023 setpoint.defl=512
-    //% kp.defl=1.2
-    //% kd.defl=0.8
+    //% setpoint.min=0 setpoint.max=1023 setpoint.defl=500
+    //% kp.defl=0.6
+    //% kd.defl=0.5
     //% ki.defl=0
     //% inlineInputMode=inline
     //% group="PID"
