@@ -47,6 +47,7 @@ namespace RobotControl {
     let gripperRightChannel = MotionBitServoChannel.S8
     let gripperLeftClosePosition = 74
     let gripperRightClosePosition = 101
+    let gripperCurrentPosition = GripperPosition.Open
     const gripperRange = 70
 
     /**
@@ -190,6 +191,13 @@ namespace RobotControl {
             }
 
             if (adc < 81) {
+                if (lastError < 0) {
+                    speedLeft = 0
+                    speedRight = baseSpeed
+                } else {
+                    speedLeft = baseSpeed
+                    speedRight = 0
+                }
                 runLineMotors(speedLeft, speedRight)
             } else if (adc > 941) {
                 speedLeft = baseSpeed
@@ -290,6 +298,7 @@ namespace RobotControl {
         gripperRightChannel = rightArm
         gripperLeftClosePosition = limit(leftPosition, 0, 180)
         gripperRightClosePosition = limit(rightPosition, 0, 180)
+        gripperCurrentPosition = GripperPosition.Close
     }
 
     /**
@@ -299,6 +308,10 @@ namespace RobotControl {
     //% group="Gripper"
     //% weight=90
     export function gripper(position: GripperPosition): void {
+        if (position == gripperCurrentPosition) {
+            return
+        }
+
         if (position == GripperPosition.Close) {
             moveGripper(
                 gripperLeftClosePosition - gripperRange,
@@ -314,6 +327,8 @@ namespace RobotControl {
                 gripperRightClosePosition + gripperRange
             )
         }
+
+        gripperCurrentPosition = position
     }
 
     function runLineMotors(speedLeft: number, speedRight: number): void {
