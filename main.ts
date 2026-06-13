@@ -19,13 +19,6 @@ enum TurnDirection {
     Right
 }
 
-enum TurnAngle {
-    //% block="90"
-    Angle90 = 90,
-    //% block="180"
-    Angle180 = 180
-}
-
 enum GripperPosition {
     //% block="close"
     Close,
@@ -33,6 +26,28 @@ enum GripperPosition {
     Open,
     //% block="toggle"
     Toggle
+}
+
+enum GripperLeftArm {
+    //% block="S5"
+    S5,
+    //% block="S6"
+    S6,
+    //% block="S7"
+    S7,
+    //% block="S8"
+    S8
+}
+
+enum GripperRightArm {
+    //% block="S1"
+    S1,
+    //% block="S2"
+    S2,
+    //% block="S3"
+    S3,
+    //% block="S4"
+    S4
 }
 
 //% color=#3455db icon="\uf1b9"
@@ -51,7 +66,7 @@ namespace RobotControl {
     let gripperRightClosePosition = 74
     let gripperCurrentPosition = GripperPosition.Open
     let gripperPositionKnown = false
-    const gripperRange = 70
+    const gripperRange = 60
 
     /**
      * Enter Maker Line calibration mode using the selected digital pin.
@@ -120,7 +135,7 @@ namespace RobotControl {
      */
     //% block="robot navigate %direction speed %speed delay %delay"
     //% speed.min=0 speed.max=255 speed.defl=170
-    //% delay.min=0 delay.defl=0
+    //% delay.min=0 delay.defl=100
     //% group="Robot"
     //% weight=90
     export function robotNavigate(direction: RobotDirection, speed: number, delay: number): void {
@@ -158,7 +173,7 @@ namespace RobotControl {
     /**
      * Follow a line using Maker Line ADC input and MOTION:BIT motors.
      */
-    //% block="robot line follow pin %pin speed %speed cross %cross stop timer %stopTimer"
+    //% block="robot line follow pin %pin speed %speed cross %cross timer to stop %stopTimer"
     //% pin.defl=AnalogReadWritePin.P0
     //% speed.min=0 speed.max=255 speed.defl=220
     //% cross.shadow="toggleOnOff"
@@ -254,14 +269,13 @@ namespace RobotControl {
     /**
      * Turn the robot until it finds the line again.
      */
-    //% block="robot turn to line %direction speed %speed angle %angle pin %pin"
+    //% block="robot turn to line %direction speed %speed pin %pin"
     //% speed.min=0 speed.max=255 speed.defl=170
-    //% angle.defl=TurnAngle.Angle90
     //% pin.defl=AnalogReadWritePin.P0
     //% inlineInputMode=inline
     //% group="Robot"
     //% weight=70
-    export function robotTurnToLine(direction: TurnDirection, speed: number, angle: TurnAngle, pin: AnalogReadWritePin): void {
+    export function robotTurnToLine(direction: TurnDirection, speed: number, pin: AnalogReadWritePin): void {
         const motorSpeed = limit(speed, 0, 255)
 
         if (direction == TurnDirection.Left) {
@@ -276,7 +290,7 @@ namespace RobotControl {
             basic.pause(5)
         }
 
-        basic.pause(turnDelay(angle, motorSpeed))
+        basic.pause(200)
 
         while (pins.analogReadPin(pin) < 81) {
             basic.pause(5)
@@ -289,16 +303,16 @@ namespace RobotControl {
      * Save the gripper close positions.
      */
     //% block="close gripper position left arm %leftArm pos %leftPosition right arm %rightArm pos %rightPosition"
-    //% leftArm.defl=MotionBitServoChannel.S8
+    //% leftArm.defl=GripperLeftArm.S8
     //% leftPosition.min=0 leftPosition.max=180 leftPosition.defl=101
-    //% rightArm.defl=MotionBitServoChannel.S4
+    //% rightArm.defl=GripperRightArm.S4
     //% rightPosition.min=0 rightPosition.max=180 rightPosition.defl=74
     //% inlineInputMode=inline
     //% group="Gripper"
     //% weight=100
-    export function calibrateGripperClose(leftArm: MotionBitServoChannel, leftPosition: number, rightArm: MotionBitServoChannel, rightPosition: number): void {
-        gripperLeftChannel = leftArm
-        gripperRightChannel = rightArm
+    export function calibrateGripperClose(leftArm: GripperLeftArm, leftPosition: number, rightArm: GripperRightArm, rightPosition: number): void {
+        gripperLeftChannel = gripperLeftArmChannel(leftArm)
+        gripperRightChannel = gripperRightArmChannel(rightArm)
         gripperLeftClosePosition = limit(leftPosition, 0, 180)
         gripperRightClosePosition = limit(rightPosition, 0, 180)
         gripperPositionKnown = false
@@ -361,10 +375,28 @@ namespace RobotControl {
         basic.pause(200)
     }
 
-    function turnDelay(angle: TurnAngle, speed: number): number {
-        const baseDelay = angle == TurnAngle.Angle180 ? 400 : 200
-        const effectiveSpeed = Math.max(1, speed)
-        return Math.round(baseDelay * 170 / effectiveSpeed)
+    function gripperLeftArmChannel(arm: GripperLeftArm): MotionBitServoChannel {
+        if (arm == GripperLeftArm.S5) {
+            return MotionBitServoChannel.S5
+        } else if (arm == GripperLeftArm.S6) {
+            return MotionBitServoChannel.S6
+        } else if (arm == GripperLeftArm.S7) {
+            return MotionBitServoChannel.S7
+        } else {
+            return MotionBitServoChannel.S8
+        }
+    }
+
+    function gripperRightArmChannel(arm: GripperRightArm): MotionBitServoChannel {
+        if (arm == GripperRightArm.S1) {
+            return MotionBitServoChannel.S1
+        } else if (arm == GripperRightArm.S2) {
+            return MotionBitServoChannel.S2
+        } else if (arm == GripperRightArm.S3) {
+            return MotionBitServoChannel.S3
+        } else {
+            return MotionBitServoChannel.S4
+        }
     }
 
     function resetPid(): void {
