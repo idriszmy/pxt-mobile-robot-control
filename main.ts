@@ -326,19 +326,19 @@ namespace RobotControl {
     /**
      * Save the gripper close positions.
      */
-    //% block="close gripper position left arm %leftArm pos %leftPosition right arm %rightArm pos %rightPosition"
+    //% block="gripper close alignment left arm %leftArm align %leftAlignment right arm %rightArm align %rightAlignment"
     //% leftArm.defl=GripperLeftArm.S8
-    //% leftPosition.min=0 leftPosition.max=180 leftPosition.defl=90
+    //% leftAlignment.min=-20 leftAlignment.max=20 leftAlignment.defl=0
     //% rightArm.defl=GripperRightArm.S4
-    //% rightPosition.min=0 rightPosition.max=180 rightPosition.defl=90
+    //% rightAlignment.min=-20 rightAlignment.max=20 rightAlignment.defl=0
     //% inlineInputMode=inline
     //% group="Gripper"
     //% weight=100
-    export function calibrateGripperClose(leftArm: GripperLeftArm, leftPosition: number, rightArm: GripperRightArm, rightPosition: number): void {
+    export function calibrateGripperClose(leftArm: GripperLeftArm, leftAlignment: number, rightArm: GripperRightArm, rightAlignment: number): void {
         gripperLeftChannel = gripperLeftArmChannel(leftArm)
         gripperRightChannel = gripperRightArmChannel(rightArm)
-        gripperLeftClosePosition = invertServoPosition(leftPosition)
-        gripperRightClosePosition = invertServoPosition(rightPosition)
+        gripperLeftClosePosition = invertServoPosition(alignmentPosition(leftAlignment))
+        gripperRightClosePosition = invertServoPosition(alignmentPosition(rightAlignment))
         gripperPositionKnown = false
     }
 
@@ -401,6 +401,10 @@ namespace RobotControl {
 
     function invertServoPosition(position: number): number {
         return 180 - limit(position, 0, 180)
+    }
+
+    function alignmentPosition(alignment: number): number {
+        return 90 - limit(alignment, -20, 20)
     }
 
     function gripperLeftArmChannel(arm: GripperLeftArm): MotionBitServoChannel {
