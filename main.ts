@@ -60,10 +60,12 @@ namespace RobotControl {
     let pidKp = 0.8
     let pidKd = 0.7
     let pidKi = 0
+    let leftMotorChannel = MotionBitMotorChannel.M4
+    let rightMotorChannel = MotionBitMotorChannel.M2
     let gripperLeftChannel = MotionBitServoChannel.S8
     let gripperRightChannel = MotionBitServoChannel.S4
-    let gripperLeftClosePosition = 101
-    let gripperRightClosePosition = 74
+    let gripperLeftClosePosition = 90
+    let gripperRightClosePosition = 90
     let gripperCurrentPosition = GripperPosition.Open
     let gripperPositionKnown = false
     const gripperRange = 60
@@ -131,6 +133,19 @@ namespace RobotControl {
     }
 
     /**
+     * Set the left and right motor channels.
+     */
+    //% block="set motor left %leftChannel right %rightChannel"
+    //% leftChannel.defl=MotionBitMotorChannel.M4
+    //% rightChannel.defl=MotionBitMotorChannel.M2
+    //% group="Robot"
+    //% weight=110
+    export function setMotor(leftChannel: MotionBitMotorChannel, rightChannel: MotionBitMotorChannel): void {
+        leftMotorChannel = leftChannel
+        rightMotorChannel = rightChannel
+    }
+
+    /**
      * Navigate the robot using MOTION:BIT motor channels M4 and M2.
      */
     //% block="robot navigate %direction speed %speed delay %delay"
@@ -142,17 +157,17 @@ namespace RobotControl {
         const motorSpeed = limit(speed, 0, 255)
 
         if (direction == RobotDirection.Forward) {
-            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, motorSpeed)
-            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
+            motionbit.runMotor(leftMotorChannel, MotionBitMotorDirection.Forward, motorSpeed)
+            motionbit.runMotor(rightMotorChannel, MotionBitMotorDirection.Forward, motorSpeed)
         } else if (direction == RobotDirection.Reverse) {
-            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Backward, motorSpeed)
-            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Backward, motorSpeed)
+            motionbit.runMotor(leftMotorChannel, MotionBitMotorDirection.Backward, motorSpeed)
+            motionbit.runMotor(rightMotorChannel, MotionBitMotorDirection.Backward, motorSpeed)
         } else if (direction == RobotDirection.Right) {
-            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, motorSpeed)
-            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Backward, motorSpeed)
+            motionbit.runMotor(leftMotorChannel, MotionBitMotorDirection.Forward, motorSpeed)
+            motionbit.runMotor(rightMotorChannel, MotionBitMotorDirection.Backward, motorSpeed)
         } else if (direction == RobotDirection.Left) {
-            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Backward, motorSpeed)
-            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
+            motionbit.runMotor(leftMotorChannel, MotionBitMotorDirection.Backward, motorSpeed)
+            motionbit.runMotor(rightMotorChannel, MotionBitMotorDirection.Forward, motorSpeed)
         }
 
         basic.pause(Math.max(0, delay))
@@ -166,8 +181,8 @@ namespace RobotControl {
     //% group="Robot"
     //% weight=60
     export function robotStop(): void {
-        motionbit.brakeMotor(MotionBitMotorChannel.M4)
-        motionbit.brakeMotor(MotionBitMotorChannel.M2)
+        motionbit.brakeMotor(leftMotorChannel)
+        motionbit.brakeMotor(rightMotorChannel)
     }
 
     /**
@@ -188,11 +203,20 @@ namespace RobotControl {
         let speedRight = baseSpeed
         let crossFound = false
         let endTime = 0
+        let timerEndTime = 0
 
         resetPid()
 
+        if (!cross && stopTimer > 0) {
+            timerEndTime = input.runningTime() + stopTimer
+        }
+
         while (true) {
             const adc = pins.analogReadPin(pin)
+
+            if (!cross && timerEndTime > 0 && input.runningTime() >= timerEndTime) {
+                break
+            }
 
             if (adc > 941 && cross) {
                 if (stopTimer <= 0) {
@@ -253,16 +277,16 @@ namespace RobotControl {
         const motorSpeed = limit(speed, 0, 255)
 
         enterCalibration(pin)
-        motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Backward, motorSpeed)
-        motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
+        motionbit.runMotor(leftMotorChannel, MotionBitMotorDirection.Backward, motorSpeed)
+        motionbit.runMotor(rightMotorChannel, MotionBitMotorDirection.Forward, motorSpeed)
         basic.pause(1000)
-        motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, motorSpeed)
-        motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Backward, motorSpeed)
+        motionbit.runMotor(leftMotorChannel, MotionBitMotorDirection.Forward, motorSpeed)
+        motionbit.runMotor(rightMotorChannel, MotionBitMotorDirection.Backward, motorSpeed)
         basic.pause(2000)
-        motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Backward, motorSpeed)
-        motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
+        motionbit.runMotor(leftMotorChannel, MotionBitMotorDirection.Backward, motorSpeed)
+        motionbit.runMotor(rightMotorChannel, MotionBitMotorDirection.Forward, motorSpeed)
         basic.pause(1000)
-        motionbit.brakeMotor(MotionBitMotorChannel.All)
+        robotStop()
         exitCalibration(pin)
     }
 
@@ -279,11 +303,11 @@ namespace RobotControl {
         const motorSpeed = limit(speed, 0, 255)
 
         if (direction == TurnDirection.Left) {
-            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Backward, motorSpeed)
-            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, motorSpeed)
+            motionbit.runMotor(leftMotorChannel, MotionBitMotorDirection.Backward, motorSpeed)
+            motionbit.runMotor(rightMotorChannel, MotionBitMotorDirection.Forward, motorSpeed)
         } else if (direction == TurnDirection.Right) {
-            motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, motorSpeed)
-            motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Backward, motorSpeed)
+            motionbit.runMotor(leftMotorChannel, MotionBitMotorDirection.Forward, motorSpeed)
+            motionbit.runMotor(rightMotorChannel, MotionBitMotorDirection.Backward, motorSpeed)
         }
 
         while (pins.analogReadPin(pin) >= 81) {
@@ -304,17 +328,17 @@ namespace RobotControl {
      */
     //% block="close gripper position left arm %leftArm pos %leftPosition right arm %rightArm pos %rightPosition"
     //% leftArm.defl=GripperLeftArm.S8
-    //% leftPosition.min=0 leftPosition.max=180 leftPosition.defl=101
+    //% leftPosition.min=0 leftPosition.max=180 leftPosition.defl=90
     //% rightArm.defl=GripperRightArm.S4
-    //% rightPosition.min=0 rightPosition.max=180 rightPosition.defl=74
+    //% rightPosition.min=0 rightPosition.max=180 rightPosition.defl=90
     //% inlineInputMode=inline
     //% group="Gripper"
     //% weight=100
     export function calibrateGripperClose(leftArm: GripperLeftArm, leftPosition: number, rightArm: GripperRightArm, rightPosition: number): void {
         gripperLeftChannel = gripperLeftArmChannel(leftArm)
         gripperRightChannel = gripperRightArmChannel(rightArm)
-        gripperLeftClosePosition = limit(leftPosition, 0, 180)
-        gripperRightClosePosition = limit(rightPosition, 0, 180)
+        gripperLeftClosePosition = invertServoPosition(leftPosition)
+        gripperRightClosePosition = invertServoPosition(rightPosition)
         gripperPositionKnown = false
     }
 
@@ -358,8 +382,8 @@ namespace RobotControl {
     }
 
     function runLineMotors(speedLeft: number, speedRight: number): void {
-        motionbit.runMotor(MotionBitMotorChannel.M4, MotionBitMotorDirection.Forward, limit(speedLeft, 0, 255))
-        motionbit.runMotor(MotionBitMotorChannel.M2, MotionBitMotorDirection.Forward, limit(speedRight, 0, 255))
+        motionbit.runMotor(leftMotorChannel, MotionBitMotorDirection.Forward, limit(speedLeft, 0, 255))
+        motionbit.runMotor(rightMotorChannel, MotionBitMotorDirection.Forward, limit(speedRight, 0, 255))
     }
 
     function moveGripper(leftFrom: number, leftTo: number, rightFrom: number, rightTo: number): void {
@@ -373,6 +397,10 @@ namespace RobotControl {
         }
 
         basic.pause(200)
+    }
+
+    function invertServoPosition(position: number): number {
+        return 180 - limit(position, 0, 180)
     }
 
     function gripperLeftArmChannel(arm: GripperLeftArm): MotionBitServoChannel {
