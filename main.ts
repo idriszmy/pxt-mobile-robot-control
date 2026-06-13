@@ -404,7 +404,7 @@ namespace RobotControl {
     }
 
     function alignmentPosition(alignment: number): number {
-        return 90 - limit(alignment, -20, 20)
+        return 90 + limit(alignment, -20, 20)
     }
 
     function gripperLeftArmChannel(arm: GripperLeftArm): MotionBitServoChannel {
