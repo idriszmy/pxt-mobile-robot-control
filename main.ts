@@ -170,8 +170,10 @@ namespace RobotControl {
             motionbit.runMotor(rightMotorChannel, MotionBitMotorDirection.Forward, motorSpeed)
         }
 
-        basic.pause(Math.max(0, delay))
-        robotStop()
+        if (delay > 0) {
+            basic.pause(delay)
+            robotStop()
+        }
     }
 
     /**
