@@ -2,6 +2,8 @@
 
 Microsoft MakeCode extension for micro:bit mobile robot activities using MOTION:BIT.
 
+![Mobile Robot Control](https://raw.githubusercontent.com/idriszmy/pxt-mobile-robot-control/master/icon.png)
+
 This extension provides higher-level robot blocks for line following, PID tuning, Maker Line calibration, robot movement, and gripper servo alignment. It is designed for classroom robotics challenges where students need reliable blocks without rebuilding the same control logic for every project.
 
 ## Features
