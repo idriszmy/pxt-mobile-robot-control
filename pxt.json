@@ -11,7 +11,8 @@
     "files": [
         "main.blocks",
         "main.ts",
-        "README.md"
+        "README.md",
+        "icon.png"
     ],
     "testFiles": [
         "test.ts"
